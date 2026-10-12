@@ -29,8 +29,9 @@ GOOD_STATUS = ["Fully Paid"]
 #   train: <= TRAIN_END
 #   test : TRAIN_END < issue <= TEST_END
 #   oot  : > TEST_END（样本外，用来算 PSI）
-TRAIN_END = "2017-12"
-TEST_END = "2018-12"
+# 注意：数据止于 2018Q4，所以用 2018 全年当 oot，train/test 往前推
+TRAIN_END = "2016-12"
+TEST_END = "2017-12"
 
 # 评分卡参数（业界标准：base 600 分，每 20 分 odds 翻倍）
 BASE_SCORE = 600
