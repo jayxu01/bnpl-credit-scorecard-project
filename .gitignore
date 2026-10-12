@@ -1,0 +1,23 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# === 数据：原始和派生数据都不提交，README 里说明来源和生成方式 ===
+data/raw/
+data/processed/
+*.csv
+*.parquet
+
+# === 模型与中间产物（二进制，可重新生成）===
+*.pkl
+*.joblib
+*.model
+
+# === IDE / 系统 ===
+.vscode/
+.idea/
+.DS_Store

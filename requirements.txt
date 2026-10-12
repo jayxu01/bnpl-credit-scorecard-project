@@ -1,0 +1,15 @@
+# Core data processing
+numpy
+pandas
+scipy
+
+# Modeling
+scikit-learn
+xgboost
+
+# Visualization
+matplotlib
+seaborn
+
+# Interactive exploration
+jupyter
