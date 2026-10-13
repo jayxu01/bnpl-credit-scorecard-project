@@ -9,8 +9,10 @@ venv/
 # === 数据：原始和派生数据都不提交，README 里说明来源和生成方式 ===
 data/raw/
 data/processed/
-*.csv
-*.parquet
+
+# === 大体积的逐样本预测结果（可重新生成）===
+*_scores.csv
+*_xgb.csv
 
 # === 模型与中间产物（二进制，可重新生成）===
 *.pkl

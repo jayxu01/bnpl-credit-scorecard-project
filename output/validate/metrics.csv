@@ -1,0 +1,5 @@
+dataset,model,ks,auc,gini
+test,scorecard,0.2839,0.695,0.39
+test,xgb,0.2935,0.7017,0.4034
+oot,scorecard,0.2737,0.6864,0.3727
+oot,xgb,0.2937,0.6982,0.3965

@@ -21,12 +21,44 @@
 
 ## 2. WoE/IV Feature Selection — `src/woe.py`
 
-_Pending — run `src/woe.py` and fill in the IV table + selected features._
+Binning: chi-square merge (max 5 bins). Selected **8** of 18 features by IV ≥ 0.02 and VIF < 5.
+
+| Feature | IV |
+|---|---|
+| int_rate | 0.4371 |
+| term | 0.1961 |
+| fico | 0.1203 |
+| dti | 0.0738 |
+| verification_status | 0.0523 |
+| loan_amnt | 0.0317 |
+| annual_inc | 0.0295 |
+| home_ownership | 0.0263 |
+
+Full WoE table: `output/woe/woe_table.csv` · plot: `output/woe/woe_plot.png`.
 
 ## 3. Scorecard — `src/scorecard.py`
 
-_Pending._
+Logistic regression on WoE features, PDO scaling (base score 600, PDO 20).
+
+- Base points: **640.6**
+- Score range: [588, 712]
+
+| Dataset | Samples | Mean score |
+|---|---|---|
+| train | 1,122,460 | 645.8 |
+| test | 169,321 | 646.0 |
+| oot | 56,318 | 649.1 |
+
+Full scorecard table: `output/scorecard/scorecard.csv`.
 
 ## 4. Validation — `src/validate.py`
 
-_Pending — KS / AUC / Gini / PSI / calibration._
+| Dataset | Model | KS | AUC | Gini |
+|---|---|---|---|---|
+| test | scorecard | 0.2839 | 0.6950 | 0.3900 |
+| test | xgb | 0.2935 | 0.7017 | 0.4034 |
+| oot | scorecard | 0.2737 | 0.6864 | 0.3727 |
+| oot | xgb | 0.2937 | 0.6982 | 0.3965 |
+
+- PSI (scorecard, train vs oot) = **0.0318** (< 0.1 = stable).
+- Plots: `output/validate/{roc_curve,ks_curve,score_distribution,calibration}.png`.

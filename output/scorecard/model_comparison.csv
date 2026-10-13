@@ -1,0 +1,7 @@
+dataset,model,ks,auc
+train,xgb,0.3086,0.7139
+test,xgb,0.2935,0.7017
+oot,xgb,0.2937,0.6982
+train,scorecard,0.2936,0.704
+test,scorecard,0.2839,0.695
+oot,scorecard,0.2737,0.6864
