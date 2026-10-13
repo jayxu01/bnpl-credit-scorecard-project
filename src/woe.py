@@ -163,6 +163,70 @@ def calc_vif(Xw: pd.DataFrame) -> pd.Series:
     return pd.Series(vif, index=Xw.columns)
 
 
+def _bin_labels(edges: list) -> list:
+    """把区间边界转成短标签，如 [-inf, 12, 18, inf] -> ['<= 12', '12~18', '> 18']。"""
+    labels = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        if np.isneginf(lo):
+            labels.append(f"<= {hi:g}")
+        elif np.isposinf(hi):
+            labels.append(f"> {lo:g}")
+        else:
+            labels.append(f"{lo:g}~{hi:g}")
+    return labels
+
+
+def plot_woe(binner: "WoEBinner", features: list, save_path: Path) -> None:
+    """画每个特征的 WoE 分箱图（保存 PNG，不弹窗）。
+
+    红柱 = WoE>0（风险偏高），蓝柱 = WoE<0（风险偏低）；
+    连续特征按区间顺序排，能直接看出单调性。
+    """
+    import matplotlib
+    matplotlib.use("Agg")  # 非交互后端，只保存不弹窗
+    import matplotlib.pyplot as plt
+
+    features = [f for f in features if f in binner.woe_]
+    n = len(features)
+    ncols = 3
+    nrows = int(np.ceil(n / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 4.5, nrows * 3.2))
+    axes = np.asarray(axes).ravel()
+
+    for i, feat in enumerate(features):
+        ax = axes[i]
+        kind, rule = binner._rules[feat]
+        woe = binner.woe_[feat]
+        if kind == "interval":
+            labels = _bin_labels(rule)
+            values = [woe.get(k, 0.0) for k in binner._bin_order[feat]]
+            if "MISSING" in woe:
+                labels.append("Missing")
+                values.append(woe["MISSING"])
+        else:
+            keys = sorted([k for k in woe if k not in ("MISSING", "OTHER")],
+                          key=lambda k: -woe[k])
+            keys += [k for k in ("MISSING", "OTHER") if k in woe]
+            labels, values = keys, [woe[k] for k in keys]
+
+        colors = ["#d64541" if v > 0 else "#4a86c8" for v in values]
+        ax.bar(range(len(values)), values, color=colors)
+        ax.axhline(0, color="gray", linewidth=0.8)
+        ax.set_xticks(range(len(values)))
+        ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=7)
+        ax.set_title(f"{feat}  (IV={binner.iv_[feat]:.3f})", fontsize=9)
+        ax.set_ylabel("WoE", fontsize=8)
+
+    for j in range(n, len(axes)):
+        axes[j].axis("off")
+
+    fig.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"已保存 WoE 图 -> {save_path}")
+
+
 def main() -> None:
     print("读取 train 数据 ...")
     train = pd.read_csv(PROCESSED_DIR / "train.csv")
@@ -196,7 +260,10 @@ def main() -> None:
         json.dump(selected, f, ensure_ascii=False, indent=2)
     woe_table = pd.concat([binner.stats_[c] for c in summary.index])
     woe_table.to_csv(OUTPUT_DIR / "woe_table.csv", index=False)
-    print(f"\n已保存 woe_binner.pkl / selected_features.json / woe_table.csv 到 {OUTPUT_DIR}")
+
+    plot_woe(binner, selected, OUTPUT_DIR / "woe_plot.png")
+
+    print(f"\n已保存 woe_binner.pkl / selected_features.json / woe_table.csv / woe_plot.png 到 {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
