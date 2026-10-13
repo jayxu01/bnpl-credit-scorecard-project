@@ -10,14 +10,17 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # 目录
 DATA_DIR = ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"              # 下载的原始 CSV 放这里
+RAW_DIR = DATA_DIR / "raw"              
 PROCESSED_DIR = DATA_DIR / "processed"  # 清洗切分后的 train/test/oot
 OUTPUT_DIR = ROOT / "output"            # 生成的图、报告、评分卡表
+WOE_DIR = OUTPUT_DIR / "woe"            # WoE/IV 分箱输出
+SCORECARD_DIR = OUTPUT_DIR / "scorecard"  # 评分卡输出
+VALIDATE_DIR = OUTPUT_DIR / "validate"    # 验证输出
 
-# 原始数据文件名（下载后放到 data/raw/ 下，按实际文件名修改）
+# 原始数据文件名
 RAW_CSV = "lending_club.csv"
 
-# 随机种子（保证每次跑结果可复现）
+# 随机种子
 SEED = 42
 
 # 目标定义：哪些 loan_status 算"坏"，哪些算"好"
