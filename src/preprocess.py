@@ -1,6 +1,6 @@
 """数据加载与预处理。
 
-把 Lending Club 原始 CSV（约 220 万行 × 145 列）变成可建模的三份干净数据。
+目的：把 Lending Club 原始 CSV（约 220 万行 × 151 列）
 
 流程：
 1. 只读取需要的 ~20 列（usecols），降低内存占用；
@@ -13,7 +13,7 @@
 
 设计说明：
 - 刻意剔除 grade / sub_grade：它们是 Lending Club 自己的风险分桶，
-  拿它们做特征等于"抄答案"，会虚高 KS，且真实业务中放款前拿不到；
+会虚高 KS，且真实业务中放款前拿不到；
 - 所有特征都是放款时点已知信息，无时间泄漏；
 - 缺失值保留为 NaN，交给下一步 WoE 分箱（缺失值单独成一箱，业界标准做法）。
 """
@@ -23,20 +23,20 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# 把 src 目录加进 sys.path，保证无论从哪个目录运行都能 import 到 config
+# 把 src 目录加进 sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import (RAW_DIR, PROCESSED_DIR, RAW_CSV, BAD_STATUS, GOOD_STATUS,
                     TRAIN_END, TEST_END, SEED)
 
-# 字符串型列（需要清洗或本来就是类别）
+# 字符串型列
 STR_COLS = [
     "loan_status", "issue_d", "term", "emp_length", "home_ownership",
     "purpose", "verification_status", "earliest_cr_line",
     "int_rate", "revol_util",
 ]
 
-# 数值型列（文件里本来就是数字）
+# 数值型列
 NUM_COLS = [
     "loan_amnt", "annual_inc", "dti", "delinq_2yrs", "inq_last_6mths",
     "open_acc", "pub_rec", "revol_bal", "total_acc",
