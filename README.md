@@ -6,6 +6,31 @@
 
 （待补充：为什么做、解决什么问题）
 
+## 项目结构
+
+```
+bnpl-credit-scorecard/
+├── data/
+│   ├── raw/               # 原始 Lending Club CSV（不提交，太大且可重新下载）
+│   └── processed/         # 清洗切分后的 train/test/oot（脚本生成，不提交）
+├── notebooks/             # EDA 探索性分析（非正式流程）
+├── output/                # 分箱器、评分卡表、验证图、报告
+├── src/                   # 核心代码（按职责拆分）
+│   ├── config.py          # 全局配置：路径、阈值、评分卡参数（改参数只动这里）
+│   ├── preprocess.py      # 数据清洗 + 好坏定义 + 时间切分
+│   ├── woe.py             # WoE/IV 分箱 + 单调性 + IV/VIF 筛选
+│   ├── scorecard.py       # 逻辑回归评分卡 + PDO 缩放
+│   ├── challenger.py      # XGBoost 挑战者对比
+│   └── validate.py        # KS/AUC/Gini/PSI/校准
+├── tests/                 # 单元测试
+├── .gitignore             # 指定哪些文件不进 git（数据、虚拟环境等）
+├── requirements.txt       # 依赖清单
+├── README.md              # 项目说明
+└── main.py                # 一键跑通全流程的入口
+```
+
+> 依赖：pandas / numpy / scipy / scikit-learn / xgboost / matplotlib / seaborn。
+
 ## 数据
 
 - 来源：Kaggle「Lending Club Loan Data」

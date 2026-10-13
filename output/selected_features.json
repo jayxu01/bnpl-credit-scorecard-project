@@ -1,0 +1,11 @@
+[
+  "int_rate",
+  "term",
+  "fico",
+  "dti",
+  "verification_status",
+  "loan_amnt",
+  "annual_inc",
+  "inq_last_6mths",
+  "home_ownership"
+]
