@@ -48,14 +48,7 @@ def psi(expected, actual, bins=10) -> float:
 def load_data():
     sc = {n: pd.read_csv(SCORECARD_DIR / f"{n}_scores.csv") for n in ["train", "test", "oot"]}
     xgb = {n: pd.read_csv(SCORECARD_DIR / f"{n}_xgb.csv") for n in ["train", "test", "oot"]}
-    with open(SCORECARD_DIR / "scorecard_meta.json") as f:
-        meta = json.load(f)
-    return sc, xgb, meta
-
-
-def score_to_prob(score, meta) -> np.ndarray:
-    """把分数反解回违约概率：prob = sigmoid((base_score - score) / factor)。"""
-    return 1 / (1 + np.exp(-(meta["base_score"] - score) / meta["factor"]))
+    return sc, xgb
 
 
 def plot_roc(sc, xgb, save_path):
@@ -109,10 +102,9 @@ def plot_score_distribution(sc, save_path):
     plt.close(fig)
 
 
-def plot_calibration(sc, meta, save_path):
+def plot_calibration(sc, save_path):
     fig, ax = plt.subplots(figsize=(6, 5))
-    prob = score_to_prob(sc["test"]["score"].to_numpy(), meta)
-    prob_true, prob_pred = calibration_curve(sc["test"]["bad"], prob, n_bins=10)
+    prob_true, prob_pred = calibration_curve(sc["test"]["bad"], sc["test"]["prob"], n_bins=10)
     ax.plot(prob_pred, prob_true, marker="o", label="Scorecard")
     ax.plot([0, 1], [0, 1], "k--", alpha=0.5)
     ax.set_xlabel("Mean predicted probability")
@@ -125,7 +117,7 @@ def plot_calibration(sc, meta, save_path):
 
 
 def main() -> None:
-    sc, xgb, meta = load_data()
+    sc, xgb = load_data()
     VALIDATE_DIR.mkdir(parents=True, exist_ok=True)
 
     rows = []
@@ -153,7 +145,7 @@ def main() -> None:
     plot_roc(sc, xgb, VALIDATE_DIR / "roc_curve.png")
     plot_ks_curve(sc, xgb, VALIDATE_DIR / "ks_curve.png")
     plot_score_distribution(sc, VALIDATE_DIR / "score_distribution.png")
-    plot_calibration(sc, meta, VALIDATE_DIR / "calibration.png")
+    plot_calibration(sc, VALIDATE_DIR / "calibration.png")
 
     metrics.to_csv(VALIDATE_DIR / "metrics.csv", index=False)
     with open(VALIDATE_DIR / "psi.json", "w") as f:

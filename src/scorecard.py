@@ -18,7 +18,7 @@ from sklearn.linear_model import LogisticRegression
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from config import (PROCESSED_DIR, WOE_DIR, SCORECARD_DIR, BASE_SCORE, PDO, SEED)
+from config import (PROCESSED_DIR, WOE_DIR, SCORECARD_DIR, BASE_SCORE, PDO, BASE_ODDS, SEED)
 from woe import WoEBinner  # 反序列化分箱器时需要该类可用
 
 
@@ -57,13 +57,13 @@ def main() -> None:
     lr = LogisticRegression(C=np.inf, solver="lbfgs", max_iter=2000, random_state=SEED)
     lr.fit(Xw, y)
 
-    # PDO 缩放：score = base_score - factor * log_odds_bad
+    # PDO 缩放：score = base_score + factor * ln(odds_good / BASE_ODDS)
     factor = PDO / np.log(2)
     beta0 = lr.intercept_[0]
     coefs = dict(zip(selected, lr.coef_[0]))
 
     # 评分卡表：base points + 每个分箱的分数
-    base_points = BASE_SCORE - factor * beta0
+    base_points = BASE_SCORE - factor * beta0 - factor * np.log(BASE_ODDS)
     rows = []
     for feat in selected:
         beta = coefs[feat]
@@ -90,8 +90,9 @@ def main() -> None:
     for name in ["train", "test", "oot"]:
         df = pd.read_csv(PROCESSED_DIR / f"{name}.csv")
         log_odds = lr.decision_function(binner.transform(df[selected]))
-        df["score"] = BASE_SCORE - factor * log_odds
-        df[["score", "bad"]].to_csv(SCORECARD_DIR / f"{name}_scores.csv", index=False)
+        df["score"] = BASE_SCORE - factor * (log_odds + np.log(BASE_ODDS))
+        df["prob"] = 1 / (1 + np.exp(-log_odds))
+        df[["score", "prob", "bad"]].to_csv(SCORECARD_DIR / f"{name}_scores.csv", index=False)
         print(f"\n{name}: 样本 {len(df):,}，分数均值 {df['score'].mean():.1f}，"
               f"分数范围 [{df['score'].min():.0f}, {df['score'].max():.0f}]")
 

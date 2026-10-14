@@ -39,6 +39,7 @@ TEST_END = "2017-12"
 # 评分卡参数（业界标准：base 600 分，每 20 分 odds 翻倍）
 BASE_SCORE = 600
 PDO = 20
+BASE_ODDS = 19   # 基准 odds（好:坏），base_score 对应 19:1，即坏账率约 5%
 
 # 变量筛选阈值
 IV_MIN = 0.02   # IV 低于该值的变量剔除
