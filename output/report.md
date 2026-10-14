@@ -61,4 +61,4 @@ Full scorecard table: `output/scorecard/scorecard.csv`.
 | oot | xgb | 0.2937 | 0.6982 | 0.3965 |
 
 - PSI (scorecard, train vs oot) = **0.0318** (< 0.1 = stable).
-- Plots: `output/validate/{roc_curve,ks_curve,score_distribution,calibration,bad_rate_by_score,psi_plot,feature_contribution}.png`.
+- Plots: `output/validate/{roc_curve,ks_curve,score_distribution,calibration,psi_plot,feature_contribution,model_comparison}.png`.

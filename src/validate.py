@@ -116,22 +116,6 @@ def plot_calibration(sc, save_path):
     plt.close(fig)
 
 
-def plot_bad_rate_by_score(sc, save_path):
-    """分数带 → 坏账率：分数越高坏账率应单调下降。"""
-    fig, ax = plt.subplots(figsize=(6, 5))
-    df = sc["test"]
-    band = pd.qcut(df["score"], 10, duplicates="drop")
-    mean_score = df.groupby(band, observed=True)["score"].mean()
-    bad_rate = df.groupby(band, observed=True)["bad"].mean()
-    ax.plot(mean_score.values, bad_rate.values, marker="o", color="#4a86c8")
-    ax.set_xlabel("Mean score (decile)")
-    ax.set_ylabel("Bad rate")
-    ax.set_title("Bad rate by score band (test)")
-    fig.tight_layout()
-    fig.savefig(save_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-
 def plot_psi(sc, save_path):
     """train vs oot 的分数分布对比（PSI 的可视化）。"""
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -160,6 +144,32 @@ def plot_feature_contribution(save_path):
     ax.barh(contrib.index, contrib.values, color="#4a86c8")
     ax.set_xlabel("Points range (max - min)")
     ax.set_title("Feature contribution to score")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_model_comparison(save_path):
+    """评分卡 vs XGBoost 的 KS / AUC 对比（test 和 oot）。"""
+    cmp = pd.read_csv(SCORECARD_DIR / "model_comparison.csv")
+    cmp = cmp[cmp["dataset"].isin(["test", "oot"])]
+    datasets = ["test", "oot"]
+    models = ["scorecard", "xgb"]
+    colors = {"scorecard": "#4a86c8", "xgb": "#d64541"}
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+    for ax, metric in zip(axes, ["ks", "auc"]):
+        x = np.arange(len(datasets))
+        width = 0.35
+        for i, m in enumerate(models):
+            vals = [cmp[(cmp["dataset"] == d) & (cmp["model"] == m)][metric].iloc[0]
+                    for d in datasets]
+            ax.bar(x + (i - 0.5) * width, vals, width, label=m, color=colors[m])
+        ax.set_xticks(x)
+        ax.set_xticklabels(datasets)
+        ax.set_ylim(bottom=0)
+        ax.set_title(metric.upper())
+        ax.legend()
+    fig.suptitle("Scorecard vs XGBoost (test & oot)")
     fig.tight_layout()
     fig.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -195,9 +205,9 @@ def main() -> None:
     plot_ks_curve(sc, xgb, VALIDATE_DIR / "ks_curve.png")
     plot_score_distribution(sc, VALIDATE_DIR / "score_distribution.png")
     plot_calibration(sc, VALIDATE_DIR / "calibration.png")
-    plot_bad_rate_by_score(sc, VALIDATE_DIR / "bad_rate_by_score.png")
     plot_psi(sc, VALIDATE_DIR / "psi_plot.png")
     plot_feature_contribution(VALIDATE_DIR / "feature_contribution.png")
+    plot_model_comparison(VALIDATE_DIR / "model_comparison.png")
 
     metrics.to_csv(VALIDATE_DIR / "metrics.csv", index=False)
     with open(VALIDATE_DIR / "psi.json", "w") as f:
