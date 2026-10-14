@@ -38,16 +38,16 @@ Full WoE table: `output/woe/woe_table.csv` · plot: `output/woe/woe_plot.png`.
 
 ## 3. Scorecard — `src/scorecard.py`
 
-Logistic regression on WoE features, PDO scaling (base score 600, PDO 20, base odds 19:1).
+Logistic regression on WoE features, PDO scaling (base score 600, PDO 20, base odds 50:1).
 
-- Base points: **555.6**
-- Score range: [503, 627]
+- Base points: **527.7**
+- Score range: [475, 599]
 
 | Dataset | Samples | Mean score |
 |---|---|---|
-| train | 1,122,460 | 560.8 |
-| test | 169,321 | 561.1 |
-| oot | 56,318 | 564.2 |
+| train | 1,122,460 | 532.9 |
+| test | 169,321 | 533.2 |
+| oot | 56,318 | 536.3 |
 
 Full scorecard table: `output/scorecard/scorecard.csv`.
 
@@ -61,4 +61,4 @@ Full scorecard table: `output/scorecard/scorecard.csv`.
 | oot | xgb | 0.2937 | 0.6982 | 0.3965 |
 
 - PSI (scorecard, train vs oot) = **0.0318** (< 0.1 = stable).
-- Plots: `output/validate/{roc_curve,ks_curve,score_distribution,calibration}.png`.
+- Plots: `output/validate/{roc_curve,ks_curve,score_distribution,calibration,bad_rate_by_score,psi_plot,feature_contribution}.png`.

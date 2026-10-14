@@ -116,6 +116,55 @@ def plot_calibration(sc, save_path):
     plt.close(fig)
 
 
+def plot_bad_rate_by_score(sc, save_path):
+    """分数带 → 坏账率：分数越高坏账率应单调下降。"""
+    fig, ax = plt.subplots(figsize=(6, 5))
+    df = sc["test"]
+    band = pd.qcut(df["score"], 10, duplicates="drop")
+    mean_score = df.groupby(band, observed=True)["score"].mean()
+    bad_rate = df.groupby(band, observed=True)["bad"].mean()
+    ax.plot(mean_score.values, bad_rate.values, marker="o", color="#4a86c8")
+    ax.set_xlabel("Mean score (decile)")
+    ax.set_ylabel("Bad rate")
+    ax.set_title("Bad rate by score band (test)")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_psi(sc, save_path):
+    """train vs oot 的分数分布对比（PSI 的可视化）。"""
+    fig, ax = plt.subplots(figsize=(6, 5))
+    train_s, oot_s = sc["train"]["score"], sc["oot"]["score"]
+    breaks = np.quantile(train_s, np.linspace(0, 1, 11))
+    breaks[0], breaks[-1] = -np.inf, np.inf
+    e = np.histogram(train_s, bins=breaks)[0] / len(train_s)
+    a = np.histogram(oot_s, bins=breaks)[0] / len(oot_s)
+    x = np.arange(10)
+    ax.bar(x - 0.2, e, width=0.4, label="train", color="#4a86c8")
+    ax.bar(x + 0.2, a, width=0.4, label="oot", color="#d64541")
+    ax.set_xlabel("Score decile (by train)")
+    ax.set_ylabel("Proportion")
+    ax.set_title("Score distribution: train vs oot")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_feature_contribution(save_path):
+    """每个特征对分数的贡献幅度（分箱分数极差）。"""
+    card = pd.read_csv(SCORECARD_DIR / "scorecard.csv")
+    contrib = card.groupby("feature")["points"].agg(lambda s: s.max() - s.min()).sort_values()
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.barh(contrib.index, contrib.values, color="#4a86c8")
+    ax.set_xlabel("Points range (max - min)")
+    ax.set_title("Feature contribution to score")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     sc, xgb = load_data()
     VALIDATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -146,6 +195,9 @@ def main() -> None:
     plot_ks_curve(sc, xgb, VALIDATE_DIR / "ks_curve.png")
     plot_score_distribution(sc, VALIDATE_DIR / "score_distribution.png")
     plot_calibration(sc, VALIDATE_DIR / "calibration.png")
+    plot_bad_rate_by_score(sc, VALIDATE_DIR / "bad_rate_by_score.png")
+    plot_psi(sc, VALIDATE_DIR / "psi_plot.png")
+    plot_feature_contribution(VALIDATE_DIR / "feature_contribution.png")
 
     metrics.to_csv(VALIDATE_DIR / "metrics.csv", index=False)
     with open(VALIDATE_DIR / "psi.json", "w") as f:
