@@ -1,7 +1,9 @@
-"""XGBoost 挑战者模型。
+"""XGBoost challenger model.
 
-在保留特征的原始值上训练 XGBoost，与逻辑回归评分卡对比 KS / AUC。
-评分卡是"冠军"（可解释、监管友好），XGBoost 是"挑战者"（非线性、可能更强）。
+Trains XGBoost on the raw values of the selected features and compares its
+KS / AUC against the logistic-regression scorecard. The scorecard is the
+"champion" (interpretable, regulator-friendly); XGBoost is the "challenger"
+(non-linear, potentially stronger).
 """
 import json
 import pickle
@@ -21,7 +23,7 @@ CAT_COLS = ["home_ownership", "verification_status"]
 
 
 def ks_stat(y_true, y_score) -> float:
-    """KS 统计量：按分数排序后，好/坏累计分布的最大差距。"""
+    """KS statistic: max gap between cumulative good/bad distributions when sorted by score."""
     order = np.argsort(-np.asarray(y_score))
     y = np.asarray(y_true)[order]
     n_pos = max(int(y.sum()), 1)
@@ -40,7 +42,7 @@ def main() -> None:
     with open(WOE_DIR / "selected_features.json") as f:
         selected = json.load(f)
 
-    # 类别变量 label 编码（映射在 train 上确定，应用到三份数据）
+    # Label-encode categorical columns (mapping fitted on train, applied to all three sets)
     for c in CAT_COLS:
         if c not in selected:
             continue
@@ -55,7 +57,7 @@ def main() -> None:
     Xoo, yoo = oot[selected], oot["bad"]
 
     model = xgb.XGBClassifier(
-        n_estimators=200, max_depth=4, learning_rate=0.08,
+        n_estimators=300, max_depth=5, learning_rate=0.05,
         subsample=0.9, colsample_bytree=0.9,
         eval_metric="logloss", random_state=SEED, n_jobs=-1,
     )
@@ -63,7 +65,7 @@ def main() -> None:
 
     SCORECARD_DIR.mkdir(parents=True, exist_ok=True)
     rows = []
-    print("\n===== XGBoost 挑战者 =====")
+    print("\n===== XGBoost challenger =====")
     for name, X, y in [("train", Xtr, ytr), ("test", Xte, yte), ("oot", Xoo, yoo)]:
         prob = model.predict_proba(X)[:, 1]
         ks, auc = eval_ks_auc(y, prob)
@@ -71,17 +73,17 @@ def main() -> None:
         print(f"    {name}: KS={ks:.4f}, AUC={auc:.4f}")
         pd.DataFrame({"prob": prob, "bad": y}).to_csv(SCORECARD_DIR / f"{name}_xgb.csv", index=False)
 
-    print("\n===== 评分卡（逻辑回归）=====")
+    print("\n===== Scorecard (logistic regression) =====")
     for name in ["train", "test", "oot"]:
         s = pd.read_csv(SCORECARD_DIR / f"{name}_scores.csv")
-        ks, auc = eval_ks_auc(s["bad"], -s["score"])  # 分数越高风险越低，取负对齐 AUC
+        ks, auc = eval_ks_auc(s["bad"], -s["score"])  # higher score = lower risk; negate for AUC
         rows.append({"dataset": name, "model": "scorecard", "ks": round(ks, 4), "auc": round(auc, 4)})
         print(f"    {name}: KS={ks:.4f}, AUC={auc:.4f}")
 
     with open(SCORECARD_DIR / "xgb_model.pkl", "wb") as f:
         pickle.dump(model, f)
     pd.DataFrame(rows).to_csv(SCORECARD_DIR / "model_comparison.csv", index=False)
-    print(f"\n对比结果已保存到 {SCORECARD_DIR / 'model_comparison.csv'}")
+    print(f"\nComparison saved to {SCORECARD_DIR / 'model_comparison.csv'}")
 
 
 if __name__ == "__main__":

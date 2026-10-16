@@ -1,7 +1,8 @@
-"""模型验证与稳定性监控。
+"""Model validation and stability monitoring.
 
-计算 KS / AUC / Gini、PSI（train vs oot）、校准曲线，并画出评估图：
-ROC、KS 曲线、分数分布、校准图，保存到 output/validate/。
+Computes KS / AUC / Gini, PSI (train vs oot), and calibration, and produces
+evaluation plots: ROC, KS curve, score distribution, calibration, PSI plot,
+feature contribution, and model comparison — saved to output/validate/.
 """
 import json
 import sys
@@ -23,7 +24,7 @@ EPS = 1e-4
 
 
 def ks_stat(y_true, y_score) -> float:
-    """KS 统计量。"""
+    """KS statistic: max gap between cumulative good/bad distributions when sorted by score."""
     order = np.argsort(-np.asarray(y_score))
     y = np.asarray(y_true)[order]
     n_pos = max(int(y.sum()), 1)
@@ -32,12 +33,12 @@ def ks_stat(y_true, y_score) -> float:
 
 
 def gini(y_true, y_score) -> float:
-    """Gini = 2 * AUC - 1。"""
+    """Gini = 2 * AUC - 1."""
     return 2 * roc_auc_score(y_true, y_score) - 1
 
 
 def psi(expected, actual, bins=10) -> float:
-    """PSI：用 expected 的分位点切箱，比较两分布占比。"""
+    """PSI: bin by quantiles of `expected` and compare the two distributions' proportions."""
     breaks = np.quantile(expected, np.linspace(0, 1, bins + 1))
     breaks[0], breaks[-1] = -np.inf, np.inf
     e = np.clip(np.histogram(expected, bins=breaks)[0] / len(expected), EPS, None)
@@ -69,7 +70,7 @@ def plot_roc(sc, xgb, save_path):
 
 def plot_ks_curve(sc, xgb, save_path):
     fig, ax = plt.subplots(figsize=(6, 5))
-    for name, y_score, label, c in [
+    for _, y_score, label, c in [
         ("scorecard", -sc["test"]["score"], "Scorecard", "#4a86c8"),
         ("xgb", xgb["test"]["prob"], "XGBoost", "#d64541"),
     ]:
@@ -117,7 +118,7 @@ def plot_calibration(sc, save_path):
 
 
 def plot_psi(sc, save_path):
-    """train vs oot 的分数分布对比（PSI 的可视化）。"""
+    """Score distribution of train vs oot (visualization of PSI)."""
     fig, ax = plt.subplots(figsize=(6, 5))
     train_s, oot_s = sc["train"]["score"], sc["oot"]["score"]
     breaks = np.quantile(train_s, np.linspace(0, 1, 11))
@@ -137,7 +138,7 @@ def plot_psi(sc, save_path):
 
 
 def plot_feature_contribution(save_path):
-    """每个特征对分数的贡献幅度（分箱分数极差）。"""
+    """Each feature's contribution to the score (points range across its bins)."""
     card = pd.read_csv(SCORECARD_DIR / "scorecard.csv")
     contrib = card.groupby("feature")["points"].agg(lambda s: s.max() - s.min()).sort_values()
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -150,7 +151,7 @@ def plot_feature_contribution(save_path):
 
 
 def plot_model_comparison(save_path):
-    """评分卡 vs XGBoost 的 KS / AUC 对比（test 和 oot）。"""
+    """Scorecard vs XGBoost KS / AUC comparison (test and oot)."""
     cmp = pd.read_csv(SCORECARD_DIR / "model_comparison.csv")
     cmp = cmp[cmp["dataset"].isin(["test", "oot"])]
     datasets = ["test", "oot"]
@@ -193,12 +194,12 @@ def main() -> None:
                 "gini": round(gini(y, y_score), 4),
             })
 
-    # PSI：评分卡分数分布 train vs oot
+    # PSI: scorecard score distribution, train vs oot
     psi_value = psi(sc["train"]["score"], sc["oot"]["score"])
     print(f"\nPSI (scorecard, train vs oot) = {psi_value:.4f}")
 
     metrics = pd.DataFrame(rows)
-    print("\n===== 验证指标 =====")
+    print("\n===== Validation metrics =====")
     print(metrics.to_string(index=False))
 
     plot_roc(sc, xgb, VALIDATE_DIR / "roc_curve.png")
@@ -212,7 +213,7 @@ def main() -> None:
     metrics.to_csv(VALIDATE_DIR / "metrics.csv", index=False)
     with open(VALIDATE_DIR / "psi.json", "w") as f:
         json.dump({"psi": psi_value}, f, indent=2)
-    print(f"\n指标和图已保存到 {VALIDATE_DIR}")
+    print(f"\nMetrics and plots saved to {VALIDATE_DIR}")
 
 
 if __name__ == "__main__":

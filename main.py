@@ -1,9 +1,10 @@
-"""一键跑通全流程的入口。
+"""One-click entry point to run the full pipeline.
 
-按顺序执行：preprocess -> woe -> scorecard -> challenger -> validate。
-用子进程逐个运行，保证每个脚本都以 __main__ 身份运行（反序列化 WoEBinner 的 pickle 需要）。
+Runs in order: preprocess -> woe -> scorecard -> challenger -> validate.
+Each script runs as a separate subprocess so it keeps its own __main__
+context (needed to unpickle the fitted WoEBinner).
 
-用法：
+Usage:
     python main.py
 """
 import subprocess
@@ -12,7 +13,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PYTHON = sys.executable  # 激活 venv 后即指向 venv 的 python
+PYTHON = sys.executable  # points to the venv python when the venv is active
 
 STEPS = ["preprocess.py", "woe.py", "scorecard.py", "challenger.py", "validate.py"]
 
@@ -22,7 +23,7 @@ def main() -> None:
     for step in STEPS:
         print(f"\n{'=' * 30} {step} {'=' * 30}")
         subprocess.run([PYTHON, str(ROOT / "src" / step)], check=True)
-    print(f"\n全流程完成，耗时 {time.time() - start:.1f} 秒。结果见 output/。")
+    print(f"\nPipeline finished in {time.time() - start:.1f}s. See output/.")
 
 
 if __name__ == "__main__":

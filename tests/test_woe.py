@@ -1,6 +1,6 @@
-"""单元测试：WoEBinner 分箱。
+"""Unit tests for WoEBinner.
 
-运行：python -m unittest tests.test_woe -v
+Run: python -m unittest tests.test_woe -v
 """
 import sys
 import unittest
@@ -15,7 +15,7 @@ from woe import WoEBinner
 
 
 def _make_data(n=1000, seed=0):
-    """生成 x 越大违约概率越高的合成数据。"""
+    """Synthetic data where default probability increases with x."""
     rng = np.random.RandomState(seed)
     x = rng.uniform(0, 100, n)
     p = 1 / (1 + np.exp(-(-2 + 0.05 * x)))
@@ -36,7 +36,7 @@ class TestWoE(unittest.TestCase):
         self.assertGreaterEqual(binner.iv_["x"], 0.0)
 
     def test_monotonic_for_linear_risk(self):
-        """风险随 x 单调上升时，WoE 应单调。"""
+        """WoE should be monotonic when risk increases monotonically with x."""
         X, y = _make_data(n=5000)
         binner = WoEBinner(max_bins=5).fit(X, y)
         self.assertTrue(binner.monotonic()["x"])
